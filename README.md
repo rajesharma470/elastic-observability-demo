@@ -12,27 +12,14 @@ This demo showcases:
 
 ## Architecture
 
-```
-┌─────────────────┐
-│ Synthetic Test  │───> POST /checkout ───> Elastic APM ───> Kibana
-│ (Every 1 min)  │      (Instrumented)      (Metrics/Spans)   (SLO Dashboard)
-└─────────────────┘      │                    │                  │
-                         │                    │                  │
-                    ┌────▼────────────────────▼──────────────────▼────┐
-                    │         Docker Compose Stack                     │
-                    │  ┌──────────────┐  ┌──────────────┐            │
-                    │  │ Checkout API │  │  APM Server  │            │
-                    │  └──────────────┘  └──────┬───────┘            │
-                    │                           │                     │
-                    │                    ┌──────▼───────┐             │
-                    │                    │ Elasticsearch│             │
-                    │                    └──────┬───────┘             │
-                    │                           │                     │
-                    │                    ┌──────▼───────┐             │
-                    │                    │    Kibana    │             │
-                    │                    └──────────────┘             │
-                    └─────────────────────────────────────────────────┘
-```
+![Elastic Observability Demo Architecture](Elastic%20Observability%20Demo.drawio.png)
+
+The architecture consists of:
+- **Synthetic Test**: Continuously tests the checkout endpoint (every 1 minute)
+- **Checkout API**: Node.js Express application instrumented with Elastic APM
+- **APM Server**: Collects and processes APM data
+- **Elasticsearch**: Stores metrics, traces, and logs
+- **Kibana**: Provides observability dashboards and SLO tracking
 
 ## Prerequisites
 
