@@ -1,0 +1,28 @@
+{
+  "name": "elastic-slo-demo",
+  "version": "1.0.0",
+  "description": "Demo component for Observability and SLOs with the Elastic Stack",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "synthetic": "node synthetic-test.js",
+    "demo:normal": "node demo-scenarios.js normal",
+    "demo:latency": "node demo-scenarios.js latency",
+    "demo:errors": "node demo-scenarios.js errors",
+    "docker:local": "docker-compose up -d",
+    "docker:cloud": "docker-compose -f docker-compose.cloud.yml up -d"
+  },
+  "keywords": [
+    "elastic",
+    "apm",
+    "slo",
+    "observability"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "elastic-apm-node": "^4.6.0",
+    "axios": "^1.6.0"
+  }
+}

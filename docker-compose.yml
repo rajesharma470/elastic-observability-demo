@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+    healthcheck:
+      test: ["CMD-SHELL", "curl -u elastic:changeme -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=changeme
+    volumes:
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elastic
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.11.0
+    container_name: apm-server
+    command: apm-server -e
+    environment:
+      - output.elasticsearch.hosts=["http://elasticsearch:9200"]
+      - output.elasticsearch.username=elastic
+      - output.elasticsearch.password=changeme
+      - apm-server.host=0.0.0.0:8200
+      - apm-server.secret_token=${APM_SECRET_TOKEN:-changeme}
+      - apm-server.kibana.enabled=true
+      - apm-server.kibana.host=http://kibana:5601
+      - apm-server.kibana.username=elastic
+      - apm-server.kibana.password=changeme
+      - apm-server.kibana.setup=true
+      - logging.level=info
+    ports:
+      - "8200:8200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    networks:
+      - elastic
+    # APM Server will be ready when it starts listening on port 8200
+    # The checkout-api will retry connections, so we don't need strict healthcheck
+
+  checkout-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: checkout-api
+    environment:
+      - APM_SERVICE_NAME=checkout-api
+      - APM_SERVER_URL=http://apm-server:8200
+      - APM_SECRET_TOKEN=${APM_SECRET_TOKEN:-changeme}
+      - APM_ENVIRONMENT=demo
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      apm-server:
+        condition: service_started
+    networks:
+      - elastic
+    restart: unless-stopped
+
+volumes:
+  elasticsearch_data:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge

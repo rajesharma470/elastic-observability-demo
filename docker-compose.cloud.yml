@@ -1,0 +1,24 @@
+version: '3.8'
+
+# Docker Compose for Elastic Cloud
+# This runs only the checkout-api locally, connecting to Elastic Cloud
+# Make sure to set your Elastic Cloud credentials in .env file
+
+services:
+  checkout-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: checkout-api
+    env_file:
+      - .env
+    environment:
+      - APM_SERVICE_NAME=${APM_SERVICE_NAME:-checkout-api}
+      - APM_SERVER_URL=${APM_SERVER_URL}
+      - APM_SECRET_TOKEN=${APM_SECRET_TOKEN}
+      - ELASTIC_API_KEY=${ELASTIC_API_KEY}
+      - APM_ENVIRONMENT=${APM_ENVIRONMENT:-production}
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
